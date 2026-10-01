@@ -20,5 +20,5 @@
       {"feature": "Feature D", "shap_value": 0.12}
     ],
     "analysis_notes": "模型展現高信心度，主要受 Feature A 與 Feature B 的正向貢獻驅動。"
-  },
+  }
 ]
