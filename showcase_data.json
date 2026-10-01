@@ -17,8 +17,8 @@
       {"feature": "Principle_02_Level_03", "shap_value": 0.28},
       {"feature": "Principle_03_Level_03", "shap_value": -0.06},
       {"feature": "Principle_04_Level_03", "shap_value": 0.12}
-    ],
-  }
+    ]
+  },
   {
     "id": "Sample_02_Principle_01_Level_00",
     "Principle": "Principle 1 - Patient Privacy and Consent",
@@ -37,6 +37,6 @@
       {"feature": "Principle_02_Level_01", "shap_value": 0.28},
       {"feature": "Principle_03_Level_01", "shap_value": -0.06},
       {"feature": "Principle_04_Level_01", "shap_value": 0.12}
-    ],
+    ]
   }
 ]
