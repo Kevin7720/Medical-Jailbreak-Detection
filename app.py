@@ -4,11 +4,11 @@ import json
 import os
 
 # -----------------------------------------------------------------------------
-# 1. 頁面配置與全域黑夜模式 CSS (含固定版面寬度設定)
+# 1. 頁面配置與全域黑夜模式 CSS
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="LLM Safety & Jailbreak Detection",
-    layout="centered",  # 改為 centered，方便中央集權控制
+    layout="centered",
     initial_sidebar_state="expanded"
 )
 
@@ -20,7 +20,7 @@ st.markdown("""
         color: #c9d1d9;
     }
 
-    /* 關鍵 1：鎖定中央內容區的最大寬度 (如 A4/報告風格)，並自動置中 */
+    /* 鎖定中央內容區最大寬度 (900px) */
     .main .block-container {
         max-width: 900px !important;
         padding-top: 2rem !important;
@@ -35,23 +35,37 @@ st.markdown("""
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 8px;
-        padding: 20px;
+        padding: 22px;
         margin-bottom: 24px;
     }
-    .prompt-title {
-        font-size: 12px;
+    
+    /* 標題設定：前景不為淺色且放大，括號內部保持淺色 */
+    .prompt-title-main {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f0f6fc;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .prompt-title-sub {
+        font-size: 14px;
+        font-weight: 400;
         color: #8b949e;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 10px;
+        margin-left: 6px;
     }
+
+    /* Input Prompt 文字調大 */
     .prompt-text {
-        font-size: 16px;
-        font-weight: 500;
+        font-size: 20px;
+        font-weight: 600;
         color: #f0f6fc;
-        margin-bottom: 16px;
-        line-height: 1.6;
+        margin-top: 12px;
+        margin-bottom: 18px;
+        line-height: 1.5;
     }
+
     .badge-container {
         display: flex;
         align-items: center;
@@ -62,7 +76,7 @@ st.markdown("""
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 12px;
+        padding: 5px 14px;
         border-radius: 16px;
         font-size: 13px;
         font-weight: 500;
@@ -96,15 +110,6 @@ st.markdown("""
         color: #8b949e;
         margin-top: 6px;
         margin-bottom: 24px;
-    }
-
-    /* 各區塊分隔容器 */
-    .section-box {
-        background-color: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -144,11 +149,14 @@ prob_data = selected_item.get("probabilities", {})
 shap_list = selected_item.get("shap_values", [])
 
 # -----------------------------------------------------------------------------
-# 3. 頂部 Evaluated Input Prompt 區塊
+# 3. 頂部 Evaluated Input Prompt 區塊 (調整標題與文字大小)
 # -----------------------------------------------------------------------------
 st.markdown(f"""
 <div class="prompt-box">
-    <div class="prompt-title">💬 EVALUATED INPUT PROMPT ({prompt_id})</div>
+    <div>
+        <span class="prompt-title-main">💬 EVALUATED INPUT PROMPT</span>
+        <span class="prompt-title-sub">({prompt_id})</span>
+    </div>
     <div class="prompt-text">“ {input_prompt} ”</div>
     <div class="badge-container">
         <div class="badge badge-blue">📋 Principle: {principle}</div>
@@ -178,7 +186,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 5. Class Probabilities (上區塊)
+# 5. Class Probabilities
 # -----------------------------------------------------------------------------
 st.markdown("### 📊 Class Probabilities")
 
@@ -219,7 +227,7 @@ if prob_data:
     st.plotly_chart(fig_prob, use_container_width=True)
 
 # -----------------------------------------------------------------------------
-# 6. SHAP Feature Attribution (順勢移至 Class Probabilities 正下方)
+# 6. SHAP Feature Attribution
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.markdown("### 🧬 SHAP Feature Attribution")
@@ -229,23 +237,19 @@ if shap_list:
     values = [float(item.get("shap_value", 0.0)) for item in shap_list]
     shap_colors = ["#f85149" if v > 0 else "#58a6ff" for v in values]
 
-    # 動態左側邊距計算
     max_feat_len = max([len(f) for f in raw_features]) if raw_features else 10
     dynamic_left_margin = min(max(max_feat_len * 8, 140), 320)
 
-    # Label 超長自動截斷
     def truncate_label(label, max_len=36):
         return label if len(label) <= max_len else label[:max_len-3] + "..."
 
     display_features = [truncate_label(f) for f in raw_features]
 
-    # 動態 X 軸界線
     min_val = min(values) if values and min(values) < 0 else 0
     max_val = max(values) if values and max(values) > 0 else 0
     x_min = min_val * 1.45 if min_val < 0 else -0.15
     x_max = max_val * 1.45 if max_val > 0 else 0.15
 
-    # 數值文字位置控制
     text_positions = ["outside" if v >= 0 else "inside" for v in values]
 
     fig_shap = go.Figure()
