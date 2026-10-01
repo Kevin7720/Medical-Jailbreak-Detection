@@ -30,40 +30,53 @@ st.markdown("""
         margin: 0 auto;
     }
 
-    /* Input Prompt 卡片樣式 */
+    /* Input Prompt 外部卡片樣式 */
     .prompt-box {
         background-color: #161b22;
         border: 1px solid #30363d;
-        border-radius: 8px;
+        border-radius: 12px;
         padding: 24px;
         margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     
-    /* 標題設定：字體整體再放大 2pt */
-    .prompt-title-main {
-        font-size: 17px;
-        font-weight: 700;
-        color: #f0f6fc;
+    /* 弱化頂部標題列，讓出主角光環 */
+    .prompt-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #8b949e; /* 降級為中性灰 */
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        margin-bottom: 16px;
     }
     .prompt-title-sub {
-        font-size: 16px;
+        color: #6e7681;
         font-weight: 400;
-        color: #8b949e;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-left: 6px;
     }
 
-    /* Input Prompt 文字再放大 2pt (22px) */
-    .prompt-text {
-        font-size: 22px;
-        font-weight: 600;
-        color: #f0f6fc;
-        margin-top: 14px;
+    /* 主體內容聚焦框 (Hero Box) - 強化 Prompt 本體視覺 */
+    .prompt-content-card {
+        background-color: #0d1117; /* 內凹極暗色深邃背景 */
+        border-left: 4px solid #58a6ff; /* 左側亮藍高亮條，瞬間鎖定視線 */
+        border-top: 1px solid #21262d;
+        border-right: 1px solid #21262d;
+        border-bottom: 1px solid #21262d;
+        border-radius: 0 8px 8px 0;
+        padding: 20px 24px;
         margin-bottom: 20px;
+    }
+
+    /* 核心 Prompt 文字樣式 (絕對主角) */
+    .prompt-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #ffffff; /* 純亮白 */
         line-height: 1.5;
+        letter-spacing: 0.2px;
+        margin: 0;
     }
 
     .badge-container {
@@ -72,7 +85,7 @@ st.markdown("""
         flex-wrap: wrap;
         gap: 12px;
     }
-    /* 標籤文字再放大 2pt (15px) */
+    /* 標籤文字 */
     .badge {
         display: inline-flex;
         align-items: center;
@@ -150,15 +163,17 @@ prob_data = selected_item.get("probabilities", {})
 shap_list = selected_item.get("shap_values", [])
 
 # -----------------------------------------------------------------------------
-# 3. 頂部 Evaluated Input Prompt 區塊 (字體均已放大 2pt)
+# 3. 頂部 Evaluated Input Prompt 區塊 (高亮聚焦版)
 # -----------------------------------------------------------------------------
 st.markdown(f"""
 <div class="prompt-box">
-    <div>
-        <span class="prompt-title-main">💬 EVALUATED INPUT PROMPT</span>
+    <div class="prompt-header">
+        <span>💬 EVALUATED INPUT PROMPT</span>
         <span class="prompt-title-sub">({prompt_id})</span>
     </div>
-    <div class="prompt-text">“ {input_prompt} ”</div>
+    <div class="prompt-content-card">
+        <p class="prompt-text">{input_prompt}</p>
+    </div>
     <div class="badge-container">
         <div class="badge badge-blue">📋 Principle: {principle}</div>
         <div class="badge badge-orange">⚠️ Harmfulness: {harmfulness_level}</div>
