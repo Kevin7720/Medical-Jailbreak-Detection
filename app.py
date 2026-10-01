@@ -5,101 +5,142 @@ import streamlit as st
 
 # 頁面配置
 st.set_page_config(
-    page_title="Classifier Evaluation Showcase",
-    page_icon="🔍",
+    page_title="Jailbreak & Safety Classifier Showcase",
+    page_icon="🛡️",
     layout="wide",
 )
 
-st.title("🔍 Classifier Prediction & SHAP Explanation Showcase")
-st.markdown("本頁面展示預先計算好的模型診斷結果、類別機率與 SHAP 特徵歸因分析。")
+st.title("🛡️ LLM Safety & Jailbreak Classifier Showcase")
+st.markdown(
+    "本介面展示 AI 安全防護分類器之診斷結果、倫理原則判定、類別機率分佈與 SHAP 特徵歸因分析。"
+)
 
 
-# 載入預先準備好的結果資料
+# 載入資料
 @st.cache_data
 def load_data():
     with open("showcase_data.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-data = load_data()
+try:
+    data = load_data()
+except Exception as e:
+    st.error(f"無法載入 showcase_data.json，請確認檔案格式是否正確: {e}")
+    st.stop()
 
 # 側邊欄：選擇樣本
-st.sidebar.header("🎯 樣本選擇區")
-sample_titles = [item["title"] for item in data]
-selected_title = st.sidebar.selectbox("請選擇測試範例 (Sample Input):", sample_titles)
+st.sidebar.header("🎯 測試範例選擇")
+sample_ids = [f"{item['id']} ({item['Harmfulness']})" for item in data]
+selected_option = st.sidebar.selectbox("請選擇測試範例 (Sample ID):", sample_ids)
 
 # 取得目前選中的數據
-selected_sample = next(item for item in data if item["title"] == selected_title)
+selected_index = sample_ids.index(selected_option)
+item = data[selected_index]
 
-# --- 主要內容區 ---
-st.subheader(f"📌 {selected_sample['title']}")
-st.caption(f"Category: `{selected_sample['category']}`")
+# --- 頂部區塊：安全倫理指標 ---
+st.markdown("---")
+top_col1, top_col2, top_col3 = st.columns([2, 1.5, 1])
 
-# 區塊 1: 原始輸入與預測摘要
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Ground Truth", selected_sample["ground_truth"])
-col2.metric("Prediction", selected_sample["prediction"])
-col3.metric("Confidence", f"{selected_sample['confidence'] * 100:.1f}%")
-status = (
-    "✅ Correct"
-    if selected_sample["prediction"] == selected_sample["ground_truth"]
-    else "❌ Misclassified"
-)
-col4.metric("Status", status)
+with top_col1:
+    st.subheader(f"📌 {item['id']}")
+    st.markdown(f"**Safety Principle:** `{item['Principle']}`")
+
+with top_col2:
+    # 根據 Harmfulness 給予不同顏色的 Badge 提示
+    harm_level = item.get("Harmfulness", "")
+    if "Level 0" in harm_level or "Harmless" in harm_level:
+        st.success(f"🛡️ **Harmfulness:** {harm_level}")
+    elif "Level 1" in harm_level or "Moderate" in harm_level:
+        st.warning(f"⚠️ **Harmfulness:** {harm_level}")
+    else:
+        st.error(f"🚨 **Harmfulness:** {harm_level}")
+
+with top_col3:
+    status = (
+        "✅ Match"
+        if item["prediction"] == item["ground_truth"]
+        else "❌ Misclassified"
+    )
+    st.metric(
+        label="Pred / Ground Truth",
+        value=f"{item['prediction']}",
+        delta=f"GT: {item['ground_truth']} ({status})",
+    )
+
+# --- 區塊 1：輸入提示詞 (Input Prompt) ---
+st.markdown("### 💬 Evaluated Input Prompt")
+st.info(f"“ {item['input_prompt']} ”")
 
 st.markdown("---")
 
-# 區塊 2: 雙欄排版 (左：類別機率 / 右：SHAP 特徵貢獻)
-left_col, right_col = st.columns([1, 1.5])
+# --- 區塊 2：類別機率分佈與 SHAP 雙欄分析 ---
+col_left, col_right = st.columns([1, 1.2])
 
-with left_col:
-    st.markdown("### 📊 Prediction Probabilities")
-    probs = selected_sample["probabilities"]
+with col_left:
+    st.markdown("### 📊 Classification Probabilities")
 
-    fig_prob = px.bar(
-        x=list(probs.keys()),
-        y=list(probs.values()),
-        labels={"x": "Class", "y": "Probability"},
-        range_y=[0, 1],
-        color=list(probs.keys()),
-        color_discrete_sequence=px.colors.qualitative.Set2,
+    probs = item["probabilities"]
+    labels = list(probs.keys())
+    values = list(probs.values())
+
+    # 自訂三分類安全配色 (Benign: 綠, Harmful: 橘/黃, Jailbreak: 紅)
+    color_map = {
+        "Benign": "#2ecc71",
+        "Harmful": "#f39c12",
+        "Jailbreak": "#e74c3c",
+    }
+    colors = [color_map.get(lbl, "#3498db") for lbl in labels]
+
+    fig_prob = go.Figure(
+        go.Bar(
+            x=labels,
+            y=values,
+            marker_color=colors,
+            text=[f"{v:.1f}%" for v in values],
+            textposition="auto",
+        )
     )
-    fig_prob.update_layout(showlegend=False, height=350)
+
+    fig_prob.update_layout(
+        xaxis_title="Predicted Class",
+        yaxis_title="Probability (%)",
+        yaxis=dict(range=[0, 105]),
+        height=360,
+        margin=dict(l=20, r=20, t=30, b=20),
+    )
     st.plotly_chart(fig_prob, use_container_width=True)
 
-    with st.expander("📝 原始輸入內容 (Input Summary)"):
-        st.code(selected_sample["input_summary"], language="text")
+with col_right:
+    st.markdown("### 🧬 SHAP Feature Attribution")
 
-with right_col:
-    st.markdown("### 🧬 SHAP Feature Contribution")
+    shap_data = item["shap_values"]
+    features = [f"{s['feature']}" for s in shap_data]
+    shap_vals = [s["shap_value"] for s in shap_data]
 
-    shap_data = selected_sample["shap_values"]
-    features = [f"{item['feature']} ({item['value']})" for item in shap_data]
-    shap_vals = [item["shap_value"] for item in shap_data]
-
-    # 設定正負顏色的 SHAP 條形圖
-    colors = ["#EF553B" if v >= 0 else "#636EFA" for v in shap_vals]
+    # 正值代表推向越危險/越強的判定(紅)，負值代表拉回安全(藍)
+    shap_colors = ["#e74c3c" if v >= 0 else "#3498db" for v in shap_vals]
 
     fig_shap = go.Figure(
         go.Bar(
             x=shap_vals,
             y=features,
             orientation="h",
-            marker_color=colors,
+            marker_color=shap_colors,
             text=[f"{v:+.3f}" for v in shap_vals],
             textposition="auto",
         )
     )
 
     fig_shap.update_layout(
-        xaxis_title="SHAP Value (Impact on Model Output)",
-        yaxis_title="Feature (Value)",
+        xaxis_title="SHAP Value (Contribution to Model Output)",
+        yaxis_title="Features / Concepts",
         yaxis=dict(autorange="reversed"),
-        height=350,
-        margin=dict(l=20, r=20, t=30, b=30),
+        height=360,
+        margin=dict(l=20, r=20, t=30, b=20),
     )
     st.plotly_chart(fig_shap, use_container_width=True)
 
-# 區塊 3: 診斷說明與分析註記
+# --- 區塊 3：診斷說明 ---
 st.markdown("### 💡 Model Diagnosis & Notes")
-st.info(selected_sample["analysis_notes"])
+st.markdown(f"> {item.get('analysis_notes', '無額外說明。')}")
