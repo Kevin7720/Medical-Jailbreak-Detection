@@ -35,20 +35,20 @@ st.markdown("""
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 8px;
-        padding: 22px;
+        padding: 24px;
         margin-bottom: 24px;
     }
     
-    /* 標題設定：前景不為淺色且放大，括號內部保持淺色 */
+    /* 標題設定：字體整體再放大 2pt */
     .prompt-title-main {
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 700;
         color: #f0f6fc;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .prompt-title-sub {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 400;
         color: #8b949e;
         text-transform: uppercase;
@@ -56,13 +56,13 @@ st.markdown("""
         margin-left: 6px;
     }
 
-    /* Input Prompt 文字調大 */
+    /* Input Prompt 文字再放大 2pt (22px) */
     .prompt-text {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 600;
         color: #f0f6fc;
-        margin-top: 12px;
-        margin-bottom: 18px;
+        margin-top: 14px;
+        margin-bottom: 20px;
         line-height: 1.5;
     }
 
@@ -72,13 +72,14 @@ st.markdown("""
         flex-wrap: wrap;
         gap: 12px;
     }
+    /* 標籤文字再放大 2pt (15px) */
     .badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 5px 14px;
-        border-radius: 16px;
-        font-size: 13px;
+        padding: 6px 16px;
+        border-radius: 18px;
+        font-size: 15px;
         font-weight: 500;
         background-color: #21262d;
         border: 1px solid #30363d;
@@ -91,13 +92,13 @@ st.markdown("""
     /* Prediction 結果字型與 layout */
     .status-malicious {
         color: #f85149;
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 700;
         margin-top: 4px;
     }
     .status-benign {
         color: #3fb950;
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 700;
         margin-top: 4px;
     }
@@ -106,7 +107,7 @@ st.markdown("""
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
-        font-size: 14px;
+        font-size: 16px;
         color: #8b949e;
         margin-top: 6px;
         margin-bottom: 24px;
@@ -149,7 +150,7 @@ prob_data = selected_item.get("probabilities", {})
 shap_list = selected_item.get("shap_values", [])
 
 # -----------------------------------------------------------------------------
-# 3. 頂部 Evaluated Input Prompt 區塊 (調整標題與文字大小)
+# 3. 頂部 Evaluated Input Prompt 區塊 (字體均已放大 2pt)
 # -----------------------------------------------------------------------------
 st.markdown(f"""
 <div class="prompt-box">
