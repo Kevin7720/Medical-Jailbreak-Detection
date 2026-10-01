@@ -9,7 +9,7 @@ import os
 st.set_page_config(
     page_title="LLM Safety & Jailbreak Detection",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -87,54 +87,50 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. 資料載入函數 (直接對接外部 JSON/Data Pipeline)
+# 2. 資料載入 (對接 showcase_data.json)
 # -----------------------------------------------------------------------------
-def load_evaluation_data(data_path="eval_results.json"):
-    """
-    從 JSON 或資料來源讀取真實評估數據。
-    如果檔案不存在，會從 st.session_state 或是外部傳入的 dict 讀取。
-    """
-    if os.path.exists(data_path):
-        with open(data_path, "r", encoding="utf-8") as f:
+def load_showcase_data(file_path="showcase_data.json"):
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    else:
-        # 如果尚未建立檔案，預設從 session_state 取用或丟出提示
-        return st.session_state.get("eval_data", None)
+    return []
 
-# 從資料源取得 payload
-data = load_evaluation_data()
+dataset = load_showcase_data()
 
-# 當完全沒有資料傳入時的防護畫面
-if not data:
-    st.error("⚠️ 未偵測到評估資料 (eval_results.json)。請確保推論結果已寫入資料集或傳入 data 物件。")
+if not dataset:
+    st.error("⚠️ 未偵測到 showcase_data.json，請確保檔案放在專案根目錄。")
     st.stop()
 
-# 解析真實資料欄位
-prompt_id = data.get("prompt_id", "EVAL_PROMPT_01")
-input_prompt = data.get("input_prompt", "")
-principle = data.get("principle", "N/A")
-harmfulness_level = data.get("harmfulness_level", "N/A")
+# 若 JSON 內有多筆資料，可以在側邊欄選取 ID
+sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(dataset)]
+selected_id = st.sidebar.selectbox("🔍 Select Evaluation Sample", sample_ids)
 
-prediction_result = data.get("prediction_result", "Unknown")
-ground_truth = data.get("ground_truth", "Unknown")
-confidence = data.get("confidence", 0.0)
+# 取得當前選取的資料物件
+selected_item = next((item for item in dataset if item.get("id") == selected_id), dataset[0])
 
-# 類別機率字典 e.g., {"Benign": 0.58, "Harmful": 0.42, "Jailbreak": 90.09}
-prob_data = data.get("class_probabilities", {})
+# 提取資料欄位
+prompt_id = selected_item.get("id", "N/A")
+principle = selected_item.get("Principle", "N/A")
+harmfulness_level = selected_item.get("Harmfulness", "N/A")
+input_prompt = selected_item.get("input_prompt", "")
 
-# SHAP 特徵字典 e.g., {"Feature_Name": 0.45, ...}
-shap_data = data.get("shap_values", {})
+ground_truth = selected_item.get("ground_truth", "N/A")
+prediction_result = selected_item.get("prediction", "N/A")
+confidence = float(selected_item.get("confidence", 0.0))
+
+prob_data = selected_item.get("probabilities", {})
+shap_list = selected_item.get("shap_values", [])
 
 # -----------------------------------------------------------------------------
 # 3. 頂部 Evaluated Input Prompt 區塊
 # -----------------------------------------------------------------------------
 st.markdown(f"""
 <div class="prompt-box">
-    <div class="prompt-title">💬 Evaluated Input Prompt ({prompt_id})</div>
+    <div class="prompt-title">💬 EVALUATED INPUT PROMPT ({prompt_id})</div>
     <div class="prompt-text">“ {input_prompt} ”</div>
     <div class="badge-container">
         <div class="badge badge-blue">📋 Principle: {principle}</div>
-        <div class="badge badge-orange">⚠ Harmfulness: {harmfulness_level}</div>
+        <div class="badge badge-orange">⚠️ Harmfulness: {harmfulness_level}</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -147,11 +143,12 @@ col_left, col_right = st.columns([1, 1.1], gap="large")
 with col_left:
     st.markdown("### 🎯 Prediction Result")
     
-    # 根據預測結果切換動態顏色
-    status_class = "status-malicious" if prediction_result.lower() in ["malicious", "jailbreak", "harmful"] else "status-benign"
+    # 根據預測結果決定顏色
+    is_malicious = str(prediction_result).lower() in ["malicious", "jailbreak", "harmful"]
+    status_class = "status-malicious" if is_malicious else "status-benign"
     st.markdown(f'<div class="{status_class}">{prediction_result}</div>', unsafe_allow_html=True)
     
-    # 判斷 Ground Truth 與 Prediction 是否 Match
+    # 比對 Ground Truth 與 Prediction 是否一致
     is_match = str(prediction_result).strip().lower() == str(ground_truth).strip().lower()
     match_badge = '<span class="badge badge-green">✓ Match</span>' if is_match else '<span class="badge badge-red">✗ Mismatch</span>'
 
@@ -171,7 +168,7 @@ with col_left:
         colors = ["#3fb950" if c.lower() == "benign" else "#d29922" if c.lower() == "harmful" else "#f85149" for c in classes]
 
         max_prob = max(probs) if probs else 100
-        x_max_prob = max(max_prob * 1.2, 100) # 動態確保 % 標籤不被切割
+        x_max_prob = max(max_prob * 1.25, 100) # 預留右側 25% 緩衝區防裁切
 
         fig_prob = go.Figure()
         fig_prob.add_trace(go.Bar(
@@ -204,29 +201,29 @@ with col_left:
 with col_right:
     st.markdown("### 🧬 SHAP Feature Attribution")
     
-    if shap_data:
-        raw_features = list(shap_data.keys())
-        values = [float(v) for v in shap_data.values()]
+    if shap_list:
+        # 解析 shap_values 陣列 [{"feature": ..., "shap_value": ...}]
+        raw_features = [str(item.get("feature", "")) for item in shap_list]
+        values = [float(item.get("shap_value", 0.0)) for item in shap_list]
         shap_colors = ["#f85149" if v > 0 else "#58a6ff" for v in values]
 
-        # 1. 根據真實資料中最長名稱動態計算左側邊距 (Left Margin)
-        max_feat_len = max([len(str(f)) for f in raw_features]) if raw_features else 10
-        dynamic_left_margin = min(max(max_feat_len * 7, 140), 320) # 彈性邊界 140px ~ 320px
+        # 1. 依據最長特徵名稱長度，動態調整左側 Margin (最少 140px，最多 320px)
+        max_feat_len = max([len(f) for f in raw_features]) if raw_features else 10
+        dynamic_left_margin = min(max(max_feat_len * 8, 140), 320)
 
-        # 2. 名稱超長時做截斷，懸停顯示完整名稱
+        # 2. 特徵名稱截斷處理 (超過 32 字元顯示 ...)
         def truncate_label(label, max_len=32):
-            label_str = str(label)
-            return label_str if len(label_str) <= max_len else label_str[:max_len-3] + "..."
+            return label if len(label) <= max_len else label[:max_len-3] + "..."
 
         display_features = [truncate_label(f) for f in raw_features]
 
-        # 3. 計算動態 X 軸，防數據溢出
+        # 3. 計算動態 X 軸極限，防止右側與左側數據溢出
         min_val = min(values) if values and min(values) < 0 else 0
         max_val = max(values) if values and max(values) > 0 else 0
-        x_min = min_val * 1.4 if min_val < 0 else -0.1
-        x_max = max_val * 1.4 if max_val > 0 else 0.1
+        x_min = min_val * 1.45 if min_val < 0 else -0.15
+        x_max = max_val * 1.45 if max_val > 0 else 0.15
 
-        # 4. 防壓字修復：正數置外 (outside)，負數置內 (inside) 避免退回 x=0 壓住 Y 軸文字
+        # 4. 防壓字關鍵：正數置外 (outside)，負數置內 (inside)，絕對不撞 Y 軸特徵名
         text_positions = ["outside" if v >= 0 else "inside" for v in values]
 
         fig_shap = go.Figure()
@@ -237,7 +234,7 @@ with col_right:
             marker=dict(color=shap_colors),
             text=[f"{v:+.3f}" for v in values],
             textposition=text_positions,
-            hovertext=raw_features,
+            hovertext=raw_features, # 滑鼠懸停時顯示完整特徵全名
             hoverinfo="text+x",
             cliponaxis=False
         ))
