@@ -147,11 +147,11 @@ def load_json_file(file_path):
 st.sidebar.markdown("## 🤖 Target LLM")
 
 model_file_map = {
-    "Mistral-7B": "data_Mistral-7B.json",
-    "Vicuna-7b": "data_Vicuna-7b.json",
-    "Vicuna-13b": "data_Vicuna-13b.json",
-    "Llama2-7B": "data_Llama2-7B.json",
-    "Llama3-8B": "data_Llama3-8B.json",
+    "Mistral-7B": "data/data_Mistral-7B.json",
+    "Vicuna-7b": "data/data_Vicuna-7b.json",
+    "Vicuna-13b": "data/data_Vicuna-13b.json",
+    "Llama2-7B": "data/data_Llama2-7B.json",
+    "Llama3-8B": "data/data_Llama3-8B.json",
 }
 
 selected_model_name = st.sidebar.selectbox(
