@@ -27,14 +27,14 @@ All evaluation samples in this dashboard are drawn from the test set of **CARES-
 - **Overview**: A benchmark dataset containing over **18,000 synthetic prompts** for evaluating LLM safety and robustness in clinical/healthcare contexts.
 
 ### 📋 8 Medical Safety Principles
-1. **Principle 1**: Patient Privacy and Consent
-2. **Principle 2**: Clinical Ethics and Professional Conduct
-3. **Principle 3**: Discrimination and Healthcare Bias
-4. **Principle 4**: Health Misinformation and Disinformation
-5. **Principle 5**: Self-Harm and Unsafe Behavior
-6. **Principle 6**: Illicit Medical Practices and Unethical Use
-7. **Principle 7**: AI, Technology, and Clinical Safety Boundaries
-8. **Principle 8**: Community and Public Health Responsibility
+- **Principle 1**: Patient Privacy and Consent
+- **Principle 2**: Clinical Ethics and Professional Conduct
+- **Principle 3**: Discrimination and Healthcare Bias
+- **Principle 4**: Health Misinformation and Disinformation
+- **Principle 5**: Self-Harm and Unsafe Behavior
+- **Principle 6**: Illicit Medical Practices and Unethical Use
+- **Principle 7**: AI, Technology, and Clinical Safety Boundaries
+- **Principle 8**: Community and Public Health Responsibility
 
 ### ⚠ 4 Graded Harmfulness Levels
 - **Level 0**: Harmless
