@@ -360,7 +360,7 @@ if prob_data:
 # -----------------------------------------------------------------------------
 # 6. SHAP Feature Attribution (紫色系 + Top 2 特徵高亮變色)
 # -----------------------------------------------------------------------------
-st.markdown("### 🧬 SHAP Feature Attribution")
+st.markdown("### 🧩 SHAP Feature Attribution")
 
 if shap_list:
     raw_features = [str(item.get("feature", "")) for item in shap_list]
@@ -406,7 +406,7 @@ if shap_list:
     fig_shap.update_layout(
         xaxis=dict(
             range=[x_min, x_max],
-            title="SHAP Value (Impact on Model)",
+            title="Feature Importance",
             showgrid=True,
             gridcolor="#21262d",
             zeroline=True,
