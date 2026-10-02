@@ -152,12 +152,67 @@ if not dataset:
     )
     st.stop()
 
-# 側邊欄切換 Sample
-sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(dataset)]
+# -----------------------------------------------------------------------------
+# 2.1 側邊欄：設置 Harmfulness 與 Principle 多選核取方塊 (Filter)
+# -----------------------------------------------------------------------------
+st.sidebar.markdown("## ⚙️ Filter Settings")
+
+# 固定 Harmfulness 選項
+harmfulness_options = ["Level 0", "Level 1", "Level 2", "Level 3"]
+selected_harmfulness = st.sidebar.multiselect(
+    "⚠️️ Harmfulness Level",
+    options=harmfulness_options,
+    default=[],  # 預設留空表示不篩選（顯示全部）
+    placeholder="Select Levels (Empty = All)",
+)
+
+# 動態從資料庫中取得出現過的所有 Principle
+all_principles = sorted(
+    list({str(item.get("Principle", "")) for item in dataset if item.get("Principle")})
+)
+selected_principles = st.sidebar.multiselect(
+    "📋 Principle",
+    options=all_principles,
+    default=[],  # 預設留空表示不篩選（顯示全部）
+    placeholder="Select Principles (Empty = All)",
+)
+
+# 根據勾選條件過濾資料集
+filtered_dataset = []
+for item in dataset:
+    item_harm = str(item.get("Harmfulness", ""))
+    item_princ = str(item.get("Principle", ""))
+
+    # 檢查 Harmfulness (若有選擇則必須包含)
+    harm_match = (
+        True
+        if not selected_harmfulness
+        else any(h.lower() in item_harm.lower() for h in selected_harmfulness)
+    )
+
+    # 檢查 Principle (若有選擇則必須包含)
+    princ_match = (
+        True if not selected_principles else (item_princ in selected_principles)
+    )
+
+    if harm_match and princ_match:
+        filtered_dataset.append(item)
+
+st.sidebar.markdown("---")
+
+# -----------------------------------------------------------------------------
+# 2.2 側邊欄：根據篩選後的清單切換 Sample
+# -----------------------------------------------------------------------------
+if not filtered_dataset:
+    st.sidebar.warning("⚠️ 沒有符合篩選條件的 Sample")
+    st.warning("⚠️ 沒有符合當前邊欄篩選條件的資料，請調整左側的 Harmfulness 或 Principle。")
+    st.stop()
+
+sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(filtered_dataset)]
 selected_id = st.sidebar.selectbox("🔍 Select Evaluation Sample", sample_ids)
 
 selected_item = next(
-    (item for item in dataset if item.get("id") == selected_id), dataset[0]
+    (item for item in filtered_dataset if item.get("id") == selected_id), filtered_dataset[0]
 )
 
 # 解析欄位
@@ -196,14 +251,13 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 4. Prediction Result & Ground Truth (優化匹配邏輯)
+# 4. Prediction Result & Ground Truth
 # -----------------------------------------------------------------------------
 st.markdown("### 🎯 Prediction Result")
 
 pred_str = str(prediction_result).strip().lower()
 gt_str = str(ground_truth).strip().lower()
 
-# 判斷是否屬於有害分類
 is_malicious = pred_str in ["malicious", "jailbreak", "harmful"]
 status_class = "status-malicious" if is_malicious else "status-benign"
 
@@ -212,7 +266,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 歸一化比對 (將 malicious/harmful/jailbreak 視為同等有害範疇)
 gt_is_malicious = gt_str in ["malicious", "jailbreak", "harmful"]
 is_match = (pred_str == gt_str) or (is_malicious == gt_is_malicious)
 
@@ -234,7 +287,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 5. Class Probabilities (對齊 data.json 鍵值)
+# 5. Class Probabilities
 # -----------------------------------------------------------------------------
 st.markdown("### 📊 Class Probabilities")
 
@@ -242,7 +295,6 @@ if prob_data:
     classes = list(prob_data.keys())
     probs = [float(v) for v in prob_data.values()]
     
-    # 針對 Benign, Harmful, Jailbreak 分別對應配色
     colors = []
     for c in classes:
         c_low = c.lower()
@@ -297,12 +349,9 @@ if shap_list:
     raw_features = [str(item.get("feature", "")) for item in shap_list]
     values = [float(item.get("shap_value", 0.0)) for item in shap_list]
 
-    # 找出 SHAP 值前 2 大（Top 2）的數值門檻/索引
     sorted_values = sorted(values, reverse=True)
     top2_threshold = sorted_values[1] if len(sorted_values) >= 2 else (sorted_values[0] if sorted_values else 0)
 
-    # SHAP 專屬配色方案 (與 Class Probabilities 完全區隔)：
-    # Top 2 採用高亮亮紫色 (#a371f7)，其餘採用沉穩的紫灰色 (#6e7681)
     shap_colors = [
         "#a371f7" if v >= top2_threshold else "#484f58"
         for v in values
@@ -319,7 +368,6 @@ if shap_list:
     min_val = min(values) if values else 0
     max_val = max(values) if values else 1.0
     
-    # 若皆為正值，X 軸從 0 開始以避免多餘空白
     x_min = 0 if min_val >= 0 else min_val * 1.2
     x_max = max_val * 1.25
 
