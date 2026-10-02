@@ -28,7 +28,6 @@ The visualizer currently integrates analysis datasets for:
 
 To run this dashboard locally:
 
-1. **Clone the repository:**
-Please click this button to start.
+1. **Please click this button to start:**
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://testclassifier-6jws7wrtheqybytqfasnzp.streamlit.app/)
 
