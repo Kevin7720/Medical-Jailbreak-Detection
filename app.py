@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import plotly.graph_objects as go
@@ -133,64 +134,70 @@ st.markdown(
 
 
 # -----------------------------------------------------------------------------
-# 2. 資料載入 (相容 showcase_data.json 及 data.json)
+# 2. 多檔案偵測與載入邏輯
 # -----------------------------------------------------------------------------
 @st.cache_data
-def load_showcase_data():
-    for file_path in ["data.json"]:
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-    return []
+def load_json_file(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
-dataset = load_showcase_data()
+# 自動搜尋目前目錄下符合條件的 JSON 檔案（例: data*.json 或指定特定清單）
+# json_files = sorted(glob.glob("*.json"))
 
-if not dataset:
-    st.error(
-        "⚠️ 未偵測到 showcase_data.json 或 data.json，請確保 JSON 檔案放在專案根目錄。"
-    )
+# 若您有具體的檔名清單，也可改為手動指定：
+json_files = ["data_Mistral-7B.json", "data_Vicuna-7b.json", "data_Vicuna-13b.json", "data_Llama2-7B.json", "data_Llama3-8B.json"]
+
+if not json_files:
+    st.error("⚠️ 目錄下找不到任何 JSON 資料檔案。")
     st.stop()
 
 # -----------------------------------------------------------------------------
-# 2.1 側邊欄：設置 Harmfulness 與 Principle 多選核取方塊 (Filter)
+# 2.1 側邊欄：第一層 - 選擇資料集檔案 (Dataset File)
+# -----------------------------------------------------------------------------
+st.sidebar.markdown("## 📂 Dataset Source")
+selected_file = st.sidebar.selectbox("Select JSON File", json_files)
+
+# 載入選中的 JSON 檔案
+dataset = load_json_file(selected_file)
+
+st.sidebar.markdown("---")
+
+# -----------------------------------------------------------------------------
+# 2.2 側邊欄：第二層 - 設置 Harmfulness 與 Principle 篩選器
 # -----------------------------------------------------------------------------
 st.sidebar.markdown("## ⚙️ Filter Settings")
 
-# 固定 Harmfulness 選項
 harmfulness_options = ["Level 0", "Level 1", "Level 2", "Level 3"]
 selected_harmfulness = st.sidebar.multiselect(
-    "⚠️️ Harmfulness Level",
+    "⚠ Harmfulness Level",
     options=harmfulness_options,
-    default=[],  # 預設留空表示不篩選（顯示全部）
+    default=[],
     placeholder="Select Levels (Empty = All)",
 )
 
-# 動態從資料庫中取得出現過的所有 Principle
+# 動態萃取該 JSON 中出現的所有 Principle
 all_principles = sorted(
     list({str(item.get("Principle", "")) for item in dataset if item.get("Principle")})
 )
 selected_principles = st.sidebar.multiselect(
     "📋 Principle",
     options=all_principles,
-    default=[],  # 預設留空表示不篩選（顯示全部）
+    default=[],
     placeholder="Select Principles (Empty = All)",
 )
 
-# 根據勾選條件過濾資料集
+# 根據條件過濾資料
 filtered_dataset = []
 for item in dataset:
     item_harm = str(item.get("Harmfulness", ""))
     item_princ = str(item.get("Principle", ""))
 
-    # 檢查 Harmfulness (若有選擇則必須包含)
     harm_match = (
         True
         if not selected_harmfulness
         else any(h.lower() in item_harm.lower() for h in selected_harmfulness)
     )
-
-    # 檢查 Principle (若有選擇則必須包含)
     princ_match = (
         True if not selected_principles else (item_princ in selected_principles)
     )
@@ -201,11 +208,11 @@ for item in dataset:
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 2.2 側邊欄：根據篩選後的清單切換 Sample
+# 2.3 側邊欄：第三層 - 選擇 Evaluation Sample
 # -----------------------------------------------------------------------------
 if not filtered_dataset:
     st.sidebar.warning("⚠️ 沒有符合篩選條件的 Sample")
-    st.warning("⚠️ 沒有符合當前邊欄篩選條件的資料，請調整左側的 Harmfulness 或 Principle。")
+    st.warning("⚠️ 當前選擇的 JSON 檔案中沒有符合篩選條件的資料，請調整左側過濾選項。")
     st.stop()
 
 sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(filtered_dataset)]
@@ -229,14 +236,14 @@ prob_data = selected_item.get("probabilities", {})
 shap_list = selected_item.get("shap_values", [])
 
 # -----------------------------------------------------------------------------
-# 3. 頂部 Evaluated Input Prompt 區塊 (高亮聚焦版)
+# 3. 頂部 Evaluated Input Prompt 區塊
 # -----------------------------------------------------------------------------
 st.markdown(
     f"""
 <div class="prompt-box">
     <div class="prompt-header">
         <span>💬 EVALUATED INPUT PROMPT</span>
-        <span class="prompt-title-sub">({prompt_id})</span>
+        <span class="prompt-title-sub">({prompt_id} / {selected_file})</span>
     </div>
     <div class="prompt-content-card">
         <p class="prompt-text">{input_prompt}</p>
