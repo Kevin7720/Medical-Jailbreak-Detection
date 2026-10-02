@@ -6,7 +6,7 @@ An interactive Streamlit web interface for evaluating **LLM Safety and Jailbreak
 
 ## 🎬 Demo Preview
 
-![App Demo](assets/demo.gif)
+![App Demo](example.gif)
 
 ---
 
