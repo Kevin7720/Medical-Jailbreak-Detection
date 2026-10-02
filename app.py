@@ -41,14 +41,14 @@ st.markdown(
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
     
-    /* 弱化頂部標題列，讓出主角光環 */
+    /* 弱化頂部標題列 */
     .prompt-header {
         display: flex;
         align-items: center;
         gap: 8px;
         font-size: 14px;
         font-weight: 600;
-        color: #8b949e; /* 降級為中性灰 */
+        color: #8b949e;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-bottom: 16px;
@@ -58,10 +58,10 @@ st.markdown(
         font-weight: 400;
     }
 
-    /* 主體內容聚焦框 (Hero Box) - 強化 Prompt 本體視覺 */
+    /* 主體內容聚焦框 (Hero Box) */
     .prompt-content-card {
-        background-color: #0d1117; /* 內凹極暗色深邃背景 */
-        border-left: 4px solid #58a6ff; /* 左側亮藍高亮條，瞬間鎖定視線 */
+        background-color: #0d1117;
+        border-left: 4px solid #58a6ff;
         border-top: 1px solid #21262d;
         border-right: 1px solid #21262d;
         border-bottom: 1px solid #21262d;
@@ -70,11 +70,11 @@ st.markdown(
         margin-bottom: 20px;
     }
 
-    /* 核心 Prompt 文字樣式 (絕對主角) */
+    /* 核心 Prompt 文字樣式 */
     .prompt-text {
         font-size: 24px;
         font-weight: 600;
-        color: #ffffff; /* 純亮白 */
+        color: #ffffff;
         line-height: 1.5;
         letter-spacing: 0.2px;
         margin: 0;
@@ -196,24 +196,26 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 4. Prediction Result & Ground Truth
+# 4. Prediction Result & Ground Truth (優化匹配邏輯)
 # -----------------------------------------------------------------------------
 st.markdown("### 🎯 Prediction Result")
 
-is_malicious = str(prediction_result).lower() in [
-    "malicious",
-    "jailbreak",
-    "harmful",
-]
+pred_str = str(prediction_result).strip().lower()
+gt_str = str(ground_truth).strip().lower()
+
+# 判斷是否屬於有害分類
+is_malicious = pred_str in ["malicious", "jailbreak", "harmful"]
 status_class = "status-malicious" if is_malicious else "status-benign"
+
 st.markdown(
     f'<div class="{status_class}">{prediction_result}</div>',
     unsafe_allow_html=True,
 )
 
-is_match = (
-    str(prediction_result).strip().lower() == str(ground_truth).strip().lower()
-)
+# 歸一化比對 (將 malicious/harmful/jailbreak 視為同等有害範疇)
+gt_is_malicious = gt_str in ["malicious", "jailbreak", "harmful"]
+is_match = (pred_str == gt_str) or (is_malicious == gt_is_malicious)
+
 match_badge = (
     '<span class="badge badge-green">✓ Match</span>'
     if is_match
@@ -232,24 +234,29 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 5. Class Probabilities
+# 5. Class Probabilities (對齊 data.json 鍵值)
 # -----------------------------------------------------------------------------
 st.markdown("### 📊 Class Probabilities")
 
 if prob_data:
     classes = list(prob_data.keys())
     probs = [float(v) for v in prob_data.values()]
-    colors = [
-        (
-            "#3fb950"
-            if c.lower() == "benign"
-            else "#d29922" if c.lower() == "harmful" else "#f85149"
-        )
-        for c in classes
-    ]
+    
+    # 針對 Benign, Harmful, Jailbreak 分別對應配色
+    colors = []
+    for c in classes:
+        c_low = c.lower()
+        if c_low == "benign":
+            colors.append("#3fb950")      # 綠色
+        elif c_low == "harmful":
+            colors.append("#f0883e")      # 橘黃色
+        elif c_low == "jailbreak":
+            colors.append("#f85149")      # 紅色
+        else:
+            colors.append("#58a6ff")      # 預設藍色
 
     max_prob = max(probs) if probs else 100
-    x_max_prob = max(max_prob * 1.25, 100)
+    x_max_prob = max(max_prob * 1.2, 100)
 
     fig_prob = go.Figure()
     fig_prob.add_trace(
@@ -282,31 +289,31 @@ if prob_data:
     st.plotly_chart(fig_prob, use_container_width=True)
 
 # -----------------------------------------------------------------------------
-# 6. SHAP Feature Attribution
+# 6. SHAP Feature Attribution (動態範圍適應)
 # -----------------------------------------------------------------------------
 st.markdown("### 🧬 SHAP Feature Attribution")
 
 if shap_list:
     raw_features = [str(item.get("feature", "")) for item in shap_list]
     values = [float(item.get("shap_value", 0.0)) for item in shap_list]
-    shap_colors = ["#f85149" if v > 0 else "#58a6ff" for v in values]
+    
+    # 配色策略：數值較高者著重強調
+    shap_colors = ["#f0883e" if v > 1.5 else "#58a6ff" if v >= 0 else "#3fb950" for v in values]
 
     max_feat_len = max([len(f) for f in raw_features]) if raw_features else 10
-    dynamic_left_margin = min(max(max_feat_len * 8, 140), 320)
+    dynamic_left_margin = min(max(max_feat_len * 8, 120), 300)
 
     def truncate_label(label, max_len=36):
-        return (
-            label if len(label) <= max_len else label[: max_len - 3] + "..."
-        )
+        return label if len(label) <= max_len else label[: max_len - 3] + "..."
 
     display_features = [truncate_label(f) for f in raw_features]
 
-    min_val = min(values) if values and min(values) < 0 else 0
-    max_val = max(values) if values and max(values) > 0 else 0
-    x_min = min_val * 1.45 if min_val < 0 else -0.15
-    x_max = max_val * 1.45 if max_val > 0 else 0.15
-
-    text_positions = ["outside" if v >= 0 else "inside" for v in values]
+    min_val = min(values) if values else 0
+    max_val = max(values) if values else 1.0
+    
+    # 若皆為正值，X 軸從 0 開始以避免多餘空白
+    x_min = 0 if min_val >= 0 else min_val * 1.2
+    x_max = max_val * 1.25
 
     fig_shap = go.Figure()
     fig_shap.add_trace(
@@ -315,8 +322,8 @@ if shap_list:
             y=display_features,
             orientation="h",
             marker=dict(color=shap_colors),
-            text=[f"{v:+.3f}" for v in values],
-            textposition=text_positions,
+            text=[f"{v:+.3f}" if v < 0 else f"{v:.3f}" for v in values],
+            textposition="outside",
             hovertext=raw_features,
             hoverinfo="text+x",
             cliponaxis=False,
