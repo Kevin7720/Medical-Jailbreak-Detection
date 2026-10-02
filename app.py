@@ -137,7 +137,7 @@ st.markdown(
 # -----------------------------------------------------------------------------
 @st.cache_data
 def load_showcase_data():
-    for file_path in ["data.json"]:
+    for file_path in ["showcase_data.json", "data.json"]:
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -289,16 +289,24 @@ if prob_data:
     st.plotly_chart(fig_prob, use_container_width=True)
 
 # -----------------------------------------------------------------------------
-# 6. SHAP Feature Attribution (動態範圍適應)
+# 6. SHAP Feature Attribution (紫色系 + Top 2 特徵高亮變色)
 # -----------------------------------------------------------------------------
 st.markdown("### 🧬 SHAP Feature Attribution")
 
 if shap_list:
     raw_features = [str(item.get("feature", "")) for item in shap_list]
     values = [float(item.get("shap_value", 0.0)) for item in shap_list]
-    
-    # 配色策略：數值較高者著重強調
-    shap_colors = ["#f0883e" if v > 1.5 else "#58a6ff" if v >= 0 else "#3fb950" for v in values]
+
+    # 找出 SHAP 值前 2 大（Top 2）的數值門檻/索引
+    sorted_values = sorted(values, reverse=True)
+    top2_threshold = sorted_values[1] if len(sorted_values) >= 2 else (sorted_values[0] if sorted_values else 0)
+
+    # SHAP 專屬配色方案 (與 Class Probabilities 完全區隔)：
+    # Top 2 採用高亮亮紫色 (#a371f7)，其餘採用沉穩的紫灰色 (#6e7681)
+    shap_colors = [
+        "#a371f7" if v >= top2_threshold else "#484f58"
+        for v in values
+    ]
 
     max_feat_len = max([len(f) for f in raw_features]) if raw_features else 10
     dynamic_left_margin = min(max(max_feat_len * 8, 120), 300)
