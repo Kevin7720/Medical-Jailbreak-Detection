@@ -1,4 +1,3 @@
-import glob
 import json
 import os
 import plotly.graph_objects as go
@@ -134,7 +133,7 @@ st.markdown(
 
 
 # -----------------------------------------------------------------------------
-# 2. 多檔案偵測與載入邏輯
+# 2. 資料載入邏輯
 # -----------------------------------------------------------------------------
 @st.cache_data
 def load_json_file(file_path):
@@ -142,23 +141,32 @@ def load_json_file(file_path):
         return json.load(f)
 
 
-# 自動搜尋目前目錄下符合條件的 JSON 檔案（例: data*.json 或指定特定清單）
-# json_files = sorted(glob.glob("*.json"))
+# -----------------------------------------------------------------------------
+# 2.1 側邊欄：第一層 - 選擇 Target LLM
+# -----------------------------------------------------------------------------
+st.sidebar.markdown("## 🤖 Target LLM")
 
-# 若您有具體的檔名清單，也可改為手動指定：
-json_files = ["data_Mistral-7B.json", "data_Vicuna-7b.json", "data_Vicuna-13b.json", "data_Llama2-7B.json", "data_Llama3-8B.json"]
+model_file_map = {
+    "Mistral-7B": "data_Mistral-7B.json",
+    "Vicuna-7b": "data_Vicuna-7b.json",
+    "Vicuna-13b": "data_Vicuna-13b.json",
+    "Llama2-7B": "data_Llama2-7B.json",
+    "Llama3-8B": "data_Llama3-8B.json",
+}
 
-if not json_files:
-    st.error("⚠️ 目錄下找不到任何 JSON 資料檔案。")
+selected_model_name = st.sidebar.selectbox(
+    "Select Target LLM",
+    options=list(model_file_map.keys()),
+    index=0
+)
+
+selected_file = model_file_map[selected_model_name]
+
+if not os.path.exists(selected_file):
+    st.sidebar.error(f"⚠️ 找不到檔案 `{selected_file}`")
+    st.error(f"⚠️ 未能讀取資料：專案目錄中缺少 `{selected_file}` 檔案。")
     st.stop()
 
-# -----------------------------------------------------------------------------
-# 2.1 側邊欄：第一層 - 選擇資料集檔案 (Dataset File)
-# -----------------------------------------------------------------------------
-st.sidebar.markdown("## 📂 Dataset Source")
-selected_file = st.sidebar.selectbox("Select JSON File", json_files)
-
-# 載入選中的 JSON 檔案
 dataset = load_json_file(selected_file)
 
 st.sidebar.markdown("---")
@@ -212,7 +220,7 @@ st.sidebar.markdown("---")
 # -----------------------------------------------------------------------------
 if not filtered_dataset:
     st.sidebar.warning("⚠️ 沒有符合篩選條件的 Sample")
-    st.warning("⚠️ 當前選擇的 JSON 檔案中沒有符合篩選條件的資料，請調整左側過濾選項。")
+    st.warning("⚠️ 當前模型資料集中沒有符合篩選條件的 Sample，請調整左側過濾選項。")
     st.stop()
 
 sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(filtered_dataset)]
@@ -243,7 +251,7 @@ st.markdown(
 <div class="prompt-box">
     <div class="prompt-header">
         <span>💬 EVALUATED INPUT PROMPT</span>
-        <span class="prompt-title-sub">({prompt_id} / {selected_file})</span>
+        <span class="prompt-title-sub">({prompt_id} / Model: {selected_model_name})</span>
     </div>
     <div class="prompt-content-card">
         <p class="prompt-text">{input_prompt}</p>
