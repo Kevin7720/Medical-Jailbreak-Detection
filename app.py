@@ -137,7 +137,7 @@ st.markdown(
 # -----------------------------------------------------------------------------
 @st.cache_data
 def load_showcase_data():
-    for file_path in ["showcase_data.json", "data.json"]:
+    for file_path in ["data.json"]:
         if os.path.exists(file_path):
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
