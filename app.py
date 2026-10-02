@@ -184,13 +184,13 @@ selected_harmfulness = st.sidebar.multiselect(
     placeholder="Select Levels (Empty = All)",
 )
 
-# 動態萃取該 JSON 中出現的所有 Principle
-all_principles = sorted(
-    list({str(item.get("Principle", "")) for item in dataset if item.get("Principle")})
-)
+# 動態萃取該 JSON 中出現的所有 Principle (將選單選項同步改為 " - " 格式)
+raw_principles = list({str(item.get("Principle", "")) for item in dataset if item.get("Principle")})
+formatted_principles = sorted([p.replace(": ", " - ") for p in raw_principles])
+
 selected_principles = st.sidebar.multiselect(
     "📋 Principle",
-    options=all_principles,
+    options=formatted_principles,
     default=[],
     placeholder="Select Principles (Empty = All)",
 )
@@ -199,7 +199,7 @@ selected_principles = st.sidebar.multiselect(
 filtered_dataset = []
 for item in dataset:
     item_harm = str(item.get("Harmfulness", ""))
-    item_princ = str(item.get("Principle", ""))
+    item_princ = str(item.get("Principle", "")).replace(": ", " - ")
 
     harm_match = (
         True
@@ -220,7 +220,7 @@ st.sidebar.markdown("---")
 # -----------------------------------------------------------------------------
 if not filtered_dataset:
     st.sidebar.warning("⚠️ 沒有符合篩選條件的 Sample")
-    st.warning("⚠️ 當前模型資料集中沒有符合篩選條件的 Sample，請調整左側過濾選項。")
+    st.warning("⚠️️ 當前模型資料集中沒有符合篩選條件的 Sample，請調整左側過濾選項。")
     st.stop()
 
 sample_ids = [item.get("id", f"Sample_{idx}") for idx, item in enumerate(filtered_dataset)]
@@ -230,9 +230,11 @@ selected_item = next(
     (item for item in filtered_dataset if item.get("id") == selected_id), filtered_dataset[0]
 )
 
-# 解析欄位
+# 解析欄位與字串格式化 (將 ": " 轉為 " - ")
 prompt_id = selected_item.get("id", "N/A")
-principle = selected_item.get("Principle", "N/A")
+raw_principle = selected_item.get("Principle", "N/A")
+principle = raw_principle.replace(": ", " - ") if isinstance(raw_principle, str) else raw_principle
+
 harmfulness_level = selected_item.get("Harmfulness", "N/A")
 input_prompt = selected_item.get("input_prompt", "")
 
