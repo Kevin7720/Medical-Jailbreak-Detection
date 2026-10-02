@@ -6,10 +6,9 @@ An interactive Streamlit web interface for evaluating **LLM Safety and Jailbreak
 
 ## 🏛️ Project & Grant Acknowledgment
 
-This interactive visualizer is developed as part of **Sub-project 3 (子計畫三)** under the National Science and Technology Council (NSTC) project:
+This interactive visualizer is developed as part of **(子計畫三)** under the National Science and Technology Council (NSTC) project:
 
-- **Project Title**: 具分層自主AI代理之多維智慧病理決策協作網 (1/2)  
-  (*Multi-Dimensional Smart Pathology Decision Collaboration Network with Hierarchical Autonomous AI Agents*)
+- **Project Title**: [具分層自主AI代理之多維智慧病理決策協作網](https://www.twaicoe.org/a-hierarchically-collaborative-autonomous-ai-agent-framework-for-multimodal-intelligent-pathology-analysis-cn)
 - **Grant Number**: `NSTC 114-2634-F-006-002`
 - **Focus**: Guardrailing medical LLMs/AI agents, detecting adversarial jailbreak attempts, and providing interpretable safety diagnostics for clinical AI workflows.
 
