@@ -10,6 +10,13 @@ An interactive Streamlit web interface for evaluating **LLM Safety and Jailbreak
 
 ---
 
+## 🚀 Quick Start
+
+**Please click this button to start:**
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://testclassifier-6jws7wrtheqybytqfasnzp.streamlit.app/)
+
+---
+
 ## ✨ Key Features
 
 - **🤖 Target LLM Selection**: Easily switch between multiple evaluated target models (e.g., Mistral-7B, Vicuna, Llama series).
@@ -28,11 +35,3 @@ The visualizer currently integrates analysis datasets for:
 - `Llama2-7B`
 - `Llama3-8B`
 
----
-
-## 🚀 Quick Start (Local Run)
-
-To run this dashboard locally:
-
-1. **Please click this button to start:**
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://testclassifier-6jws7wrtheqybytqfasnzp.streamlit.app/)
