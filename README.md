@@ -22,6 +22,9 @@ An interactive Streamlit web interface for evaluating **LLM Safety and Jailbreak
 All evaluation samples in this dashboard are drawn from the test set of **CARES-18K**:
 
 - **Dataset**: **CARES-18K** (*Clinical Adversarial Robustness and Evaluation of Safety*)
+- **Links**:
+  - 📄 **Paper**: [OpenReview PDF](https://openreview.net/pdf?id=5RykuxC8Jl)
+  - 🤗 **HuggingFace Dataset**: [HFXM/CARES-18K](https://huggingface.co/datasets/HFXM/CARES-18K)
 - **Overview**: A benchmark dataset for evaluating the safety and robustness of LLMs in clinical and healthcare contexts. It consists of over **18,000 synthetic prompts** designed to probe both LLM vulnerabilities to adversarial jailbreak inputs and their tendency to over-refuse safe queries.
 
 ### 📋 8 Medical Safety Principles
