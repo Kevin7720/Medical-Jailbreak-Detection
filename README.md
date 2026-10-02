@@ -2,7 +2,7 @@
 
 An interactive Streamlit web interface for evaluating **LLM Safety and Jailbreak Detection**. This tool provides transparent model probability breakdowns and SHAP feature attributions across various target Large Language Models (LLMs).
 
-##🚀 Quick Start 
+## 🚀 Quick Start 
 **Please click this button to start :** [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://testclassifier-6jws7wrtheqybytqfasnzp.streamlit.app/)
 
 ## 🎬 Demo Preview
